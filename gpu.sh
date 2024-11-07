@@ -14,7 +14,7 @@
 
 make
 # { time ./out 10 > out.txt ; } 2> time.txt
-./out_1000 10 > out_1000.txt
 ./out_500 10 > out_500.txt
+./out_1000 10 > out_1000.txt
 ./out_2000 10 > out_2000.txt
 
