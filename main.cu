@@ -1,222 +1,128 @@
-#include <iostream>
-#include <cmath>
-#include <utility>
-#include <algorithm>
-#include <deque>
-#include <queue>
-#include <vector>
 #include <stdio.h>
-#include <omp.h>
-#include "fheavy.h" 
+#include <iostream>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 using namespace std;
+static const long long n = 1000;
+int t;
 
-struct interval{
-	double a;
-	double b;
-	double fa;
-	double fb;
-	double maximum;
-};
-
-struct comparator{
-    bool operator()(const interval &a,const interval &b){
-        return a.maximum<b.maximum;
+__global__ void MatrixUpdate(double *A, double *B)
+{
+    long long idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < n * n)
+    {
+        long long i = idx / n;
+        long long j = idx % n;
+        if (i == 0 || i == n - 1 || j == 0 || j == n - 1)
+            B[idx] = A[idx];
+        else
+        {
+            auto t1 = max(min(A[idx - 1], A[idx + 1]), min(A[idx - n], A[idx + n]));
+            auto t2 = min(max(A[idx - 1], A[idx + 1]), max(A[idx - n], A[idx + n]));
+            B[idx] = max(min(t1, t2), min(A[idx], max(t1, t2)));
+        }
     }
-};
+}
 
-int main(int argc, char **argv){
-	
-	double a=atof(argv[1]);	
-	double b=atof(argv[2]);	
-	double e=atof(argv[3]);	
-	double s=atof(argv[4]);	
-	int n;									
-	int id;									
-	double start_time;						 
-	double end_time;						
-	double total_time;					    
-
-	priority_queue<interval,vector<interval>,comparator> MAXs;
-	
-	double Maxin;
-    vector<bool>done;
-    bool finish=false;
-
-	start_time = omp_get_wtime();
-
-	#pragma omp parallel private(id)	
-	{
-		n = omp_get_num_threads();
-    	id = omp_get_thread_num();		
-    	#pragma omp single
-    	{
-    		interval sing_interval;
-    		sing_interval.a=a;
-			sing_interval.b=b;
-			sing_interval.fa=fheavy(a);
-			sing_interval.fb=fheavy(b);
-			sing_interval.maximum=(sing_interval.fa+sing_interval.fb+s*(b-a))/2;
-			done.resize(n);
-			for(int i=0;i<n;i++){
-				done[i]=false;
-			}
-
-			MAXs.push(sing_interval);
-			Maxin=max(sing_interval.fa,sing_interval.fb);
-    	}
-    	
-    	if(id==0){				
-			//Master
-			interval local_interval;
-			vector<bool> master_done;
-			double local_Maxin;
-    		interval local_interval1;
-    		interval local_interval2;
-    		bool local_first=false;
-
-    		while(!local_first){
-    			#pragma omp critical
-    			{
-    				if(!MAXs.empty()){
-    					local_interval=MAXs.top();	
-    					MAXs.pop();
-    					local_first=true;
-    				}
-    			}    			
-    		}
-
-			while(1){
-				bool local_flag=true;
-				bool local_update=false;				
-
-    			if(Maxin+e>local_interval.maximum){
-    				for(size_t i=1;i<done.size();i++){
-    					local_flag=local_flag&master_done[i];
-    				}
-    				if(local_flag){
-    					//omp_set_lock(&lock);
-    					#pragma omp critical
-    					{
-    						finish=true;
-    					}    					
-    					//omp_unset_lock(&lock);
-    					break;
-    				}
-    			}
-    			else{
-    				local_Maxin=max(max(local_interval.fa,local_interval.fb),Maxin);
-
-					local_update=true;
-					local_interval1.a=local_interval.a;
-					local_interval1.b=(local_interval.a+local_interval.b)/2;
-					local_interval1.fa=local_interval.fa;
-					local_interval1.fb=fheavy(local_interval1.b);
-					local_interval1.maximum=(local_interval1.fa+local_interval1.fb+s*(local_interval1.b-local_interval1.a))/2;//(fa+fb+s*(b-a))/2
-					local_interval2.a=(local_interval.a+local_interval.b)/2;
-					local_interval2.b=local_interval.b;
-					local_interval2.fa=local_interval1.fb;
-					local_interval2.fb=local_interval.fb;
-					local_interval2.maximum=(local_interval2.fa+local_interval2.fb+s*(local_interval2.b-local_interval2.a))/2;				
-				}
-				if(local_update){
-					#pragma omp critical
-    				{
-    					MAXs.push(local_interval1);
-						MAXs.push(local_interval2);
-						local_interval=MAXs.top();	
-    					MAXs.pop();
-    					master_done=done;
-    					Maxin=local_Maxin;					
-    				}
-    				
-    			}
-    			else{
-    				#pragma omp critical
-    				{
-						local_interval=MAXs.top();	
-    					MAXs.pop();
-    					master_done=done;					
-    				}
-    			}    								
-
-    			//count++;		
-				//printf("Finishing one time iteration %d\n",count);
-    		}		
-    	}
-    	else{
-    		
-    		interval local_interval;
-    		double local_Maxin;
-    		interval local_interval1;
-    		interval local_interval2;
-    		bool local_done;
-    		bool local_first=false;
-
-    		while(!local_first){
-    			#pragma omp critical
-    			{    			
-    				if(!MAXs.empty()){
-    					local_interval=MAXs.top();	
-    					MAXs.pop();
-    					local_first=true;
-    				}
-    			}    			
-    		}
-    		//printf("The total thread number is  %d.The thread %d starts\n",n ,id);
-    		
-    		while(!finish){  
-    			bool local_update=false;			
-
-   				if(Maxin+e<local_interval.maximum){			
-    				local_done=false;			
-					
-					local_Maxin=max(max(local_interval.fa,local_interval.fb),Maxin);
-
-					local_update=true;
-					local_interval1.a=local_interval.a;
-					local_interval1.b=(local_interval.a+local_interval.b)/2;
-					local_interval1.fa=local_interval.fa;
-					local_interval1.fb=fheavy(local_interval1.b);
-					local_interval1.maximum=(local_interval1.fa+local_interval1.fb+s*(local_interval1.b-local_interval1.a))/2;
-					
-                    local_interval2.a=(local_interval.a+local_interval.b)/2;
-					local_interval2.b=local_interval.b;
-					local_interval2.fa=local_interval1.fb;
-					local_interval2.fb=local_interval.fb;
-					local_interval2.maximum=(local_interval2.fa+local_interval2.fb+s*(local_interval2.b-local_interval2.a))/2;    					
-
-    			}
-    			else{    					
-    				local_done=true;
-    			}
-    			if(!local_update){
-    				#pragma omp critical
-    				{    					
-    					local_interval=MAXs.top();	
-    					MAXs.pop();
-    					done[id]=local_done;
-    				}    									
-    			}
-    			else{
-    				#pragma omp critical
-    				{
-    					MAXs.push(local_interval1);
-						MAXs.push(local_interval2);
-						Maxin=local_Maxin;
-						done[id]=local_done;
-						local_interval=MAXs.top();	
-    					MAXs.pop();						
-    				}				
-				}    							
-    		}
-    	}
-
+__global__ void MatrixVerify1(double *A, double *C)
+{
+    long long idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx == 0)
+    {
+        C[2] = A[37 * n + 48];
     }
-    end_time=omp_get_wtime();
-    total_time =end_time-start_time;
+}
 
-    printf("Time:  %f\n",total_time);
-	printf("Maximum: %f\n",Maxin);
-	return 0;
+__global__ void MatrixSum(double *A, double *C, long long *D)
+{
+    long long idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx < n * n)
+    {
+        if (idx % (2 * D[0]) == 0 && idx + D[0] < n * n)
+        {
+            A[idx] += A[idx + D[0]];
+        }
+    }
+}
+
+__global__ void MatrixVerify2(double *A, double *C)
+{
+    long long idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx == 0)
+    {
+        C[0] = A[0];
+    }
+}
+
+int main(int argc, char *argv[])
+{
+    t = atoi(argv[1]);
+    double *d_A;
+    double *d_B;
+    double *d_final;
+    double *d_C;
+    long long *d_D;
+    auto size = n * n * sizeof(double);
+    cudaMalloc(&d_A, size);
+    cudaMalloc(&d_B, size);
+    cudaMalloc(&d_C, 3 * sizeof(double));
+    cudaMalloc(&d_D, sizeof(long long));
+    double h_A[n * n];
+    double h_C[3];
+    for (long long k = 0; k < n * n; k++)
+    {
+        double i = (double)(k / n);
+        double j = (double)(k % n);
+        h_A[k] = sin(i * i + j) * sin(i * i + j) + cos(i - j);
+    }
+
+    cudaEvent_t start, stop;
+    float ttime;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start, 0);
+    cudaEventSynchronize(start);
+    cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
+    for (int i = 0; i < t / 2; ++i)
+    {
+        MatrixUpdate<<<(n * n + 255) / 256, 256>>>(d_A, d_B);
+        cudaDeviceSynchronize();
+        MatrixUpdate<<<(n * n + 255) / 256, 256>>>(d_B, d_A);
+        cudaDeviceSynchronize();
+    }
+
+    if (t % 2 == 1)
+    {
+        MatrixUpdate<<<(n * n + 255) / 256, 256>>>(d_A, d_B);
+        cudaDeviceSynchronize();
+        d_final = d_B;
+    }
+    else
+        d_final = d_A;
+
+    MatrixVerify1<<<(n * n + 255) / 256, 256>>>(d_final, d_C);
+    cudaDeviceSynchronize();
+    long long st = 1;
+    while (st <= n * n)
+    {
+        cudaMemcpy(d_D, &st, sizeof(long long), cudaMemcpyHostToDevice);
+        MatrixSum<<<(n * n + 255) / 256, 256>>>(d_final, d_C, d_D);
+        cudaDeviceSynchronize();
+        st *= 2;
+    }
+    MatrixVerify2<<<(n * n + 255) / 256, 256>>>(d_final, d_C);
+    cudaDeviceSynchronize();
+    cudaMemcpy(h_C, d_C, 3 * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaEventRecord(stop, 0);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&ttime, start, stop);
+    cout << "sum: " << h_C[0] << "\n";
+    cout << "A[37, 47] = " << h_C[2] << "\n";
+    cout << "Time: " << ttime << " ms";
+    cudaFree(d_A);
+    cudaFree(d_B);
+    cudaFree(d_C);
+    return 0;
 }
