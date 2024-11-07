@@ -34,6 +34,15 @@ int main(int argc, char *argv[])
             A[(long) i][(long) j] = (1 + cos(2 * i) + sin(j)) * (1 + cos(2 * i) + sin(j));
         }
     }
+    // printA
+    for (int i = 0; i < 5; ++i)
+    {
+        for (int j = 0; j < 5; ++j)
+        {
+            cout << A[i][j] << " ";
+        }
+        cout << "\n";
+    }
 
     double tmp0, tmp1;
     for (int tao = 0; tao < t; ++tao)

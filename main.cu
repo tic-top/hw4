@@ -78,6 +78,15 @@ int main(int argc, char *argv[])
             h_A[(long long)i * n + (long long)j] = (1 + cos(2 * i) + sin(j)) * (1 + cos(2 * i) + sin(j));
         }
     }
+    // print h_A
+    for (int i = 0; i < 5; i++)
+    {
+        for (int j = 0; j < 5; j++)
+        {
+            cout << h_A[i * n + j] << " ";
+        }
+        cout << "\n";
+    }
 
     cudaEvent_t start, stop;
     float ttime;
