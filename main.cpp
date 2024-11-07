@@ -15,29 +15,36 @@
 #include <vector>
 using namespace std;
 using namespace std::chrono;
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     long n = atoi(argv[1]);
-    int t = atoi(argv[2]);  
+    int t = atoi(argv[2]);
 
     // create A and B with size n x n
     // remember n is a variable, 2d vector maybe a good choice
     vector<vector<double>> A(n, vector<double>(n));
     vector<vector<double>> B(n, vector<double>(n));
-    
+
     auto start = high_resolution_clock::now();
-    
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            A[i][j] = (1 + cos(2*i)+sin(j)) * (1 + cos(2*i)+sin(j));
+
+    for (double i = 0; i < n; ++i)
+    {
+        for (double j = 0; j < n; ++j)
+        {
+            A[(long) i][(long) j] = (1 + cos(2 * i) + sin(j)) * (1 + cos(2 * i) + sin(j));
         }
     }
 
     double tmp0, tmp1;
-    for (int tao = 0; tao < t; ++tao) {
-        for (int i = 0; i < n; ++i) {
-            for (int j = 0; j < n; ++j) {
-                if (i==0||i==n-1||j==0||j==n-1) B[i][j]=A[i][j];
-                else {
+    for (int tao = 0; tao < t; ++tao)
+    {
+        for (int i = 0; i < n; ++i)
+        {
+            for (int j = 0; j < n; ++j)
+            {
+                B[i][j] = A[i][j];
+                if (!(i == 0 || i == n - 1 || j == 0 || j == n - 1))
+                {
                     // method1
                     // tmp0 = A[i-1][j-1] < A[i+1][j+1] ? A[i-1][j-1] : A[i+1][j+1];
                     // tmp1 = A[i-1][j-1] + A[i+1][j+1] - tmp0;
@@ -57,30 +64,34 @@ int main(int argc, char *argv[]) {
                     // }
 
                     // method2
-                    tmp0 = min(max(A[i-1][j-1], A[i+1][j+1]), max(A[i+1][j-1], A[i-1][j+1]));
-                    tmp1 = max(min(A[i-1][j-1], A[i+1][j+1]), min(A[i+1][j-1], A[i-1][j+1]));
+                    tmp0 = min(max(A[i - 1][j - 1], A[i + 1][j + 1]), max(A[i + 1][j - 1], A[i - 1][j + 1]));
+                    tmp1 = max(min(A[i - 1][j - 1], A[i + 1][j + 1]), min(A[i + 1][j - 1], A[i - 1][j + 1]));
                     tmp1 = min(tmp1, tmp0);
 
-                    B[i][j] = tmp1+A[i][j];
+                    B[i][j] += tmp1;
                 }
             }
         }
-        for (int i = 0; i < n; ++i) {
-            for (int j = 0; j < n; ++j) {
+        for (int i = 0; i < n; ++i)
+        {
+            for (int j = 0; j < n; ++j)
+            {
                 A[i][j] = B[i][j];
             }
         }
     }
-    
+
     double s = 0;
-    for (int i = 0; i < n; ++i) {
-        for (int j = 0; j < n; ++j) {
-            s+=A[i][j];
+    for (int i = 0; i < n; ++i)
+    {
+        for (int j = 0; j < n; ++j)
+        {
+            s += A[i][j];
         }
     }
     cout << "sum = " << s << "\n";
     cout << "A[37, 47] = " << A[37][47] << "\n";
-    
+
     auto end = high_resolution_clock::now();
     auto duration = duration_cast<milliseconds>(end - start);
     cout << "Time: " << duration.count() << " ms" << "\n";
