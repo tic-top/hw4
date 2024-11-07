@@ -5,7 +5,7 @@
 #include <string.h>
 
 using namespace std;
-static const long long n = 1000;
+static const long long n = 500;
 int t = 10;
 
 __global__ void MatrixUpdate(double *A, double *B)

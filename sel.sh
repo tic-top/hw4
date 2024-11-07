@@ -6,15 +6,12 @@
 #SBATCH --mail-type=END
 #SBATCH --nodes=1
 #SBATCH --ntasks-per-node=1
-#SBATCH --gres=gpu:1
 #SBATCH --mem-per-cpu=1g
 #SBATCH --time=00:05:00
 #SBATCH --account=cse587f24_class
-#SBATCH --partition=gpu
+#SBATCH --partition=standard
 
-make
-# { time ./out 10 > out.txt ; } 2> time.txt
-./out_1000 10 > out_1000.txt
-./out_500 10 > out_500.txt
-./out_2000 10 > out_2000.txt
-
+g++ -std=c++11 -O3 -fopenmp -o s main.cpp
+./s 500 10 > sel_500.txt
+./s 1000 10 > sel_1000.txt
+./s 2000 10 > sel_2000.txt
