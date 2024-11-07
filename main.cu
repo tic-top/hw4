@@ -6,7 +6,7 @@
 
 using namespace std;
 static const long long n = 1000;
-int t=10;
+int t = 10;
 
 __global__ void MatrixUpdate(double *A, double *B)
 {
@@ -46,6 +46,14 @@ __global__ void MatrixSum(double *A, double *C, long long *D)
     }
 }
 
+__global__ void MatrixVerify2(double *A, double *C)
+{
+    long long idx = blockIdx.x * blockDim.x + threadIdx.x;
+    if (idx == 0)
+    {
+        C[0] = A[0];
+    }
+}
 
 int main(int argc, char *argv[])
 {
@@ -58,10 +66,10 @@ int main(int argc, char *argv[])
     auto size = n * n * sizeof(double);
     cudaMalloc(&d_A, size);
     cudaMalloc(&d_B, size);
-    cudaMalloc(&d_C, 2 * sizeof(double));
+    cudaMalloc(&d_C, 3 * sizeof(double));
     cudaMalloc(&d_D, sizeof(long long));
     double h_A[n * n];
-    double h_C[2];
+    double h_C[3];
 
     for (double i = 0; i < n; i++)
     {
@@ -92,10 +100,10 @@ int main(int argc, char *argv[])
         cudaDeviceSynchronize();
         d_final = d_B;
     }
-    else{
+    else
+    {
         d_final = d_A;
     }
-        
 
     MatrixVerify1<<<(n * n + 255) / 256, 256>>>(d_final, d_C);
     cudaDeviceSynchronize();
@@ -107,13 +115,14 @@ int main(int argc, char *argv[])
         cudaDeviceSynchronize();
         st *= 2;
     }
+    MatrixVerify2<<<(n * n + 255) / 256, 256>>>(d_final, d_C);
     cudaDeviceSynchronize();
-    cudaMemcpy(h_C, d_C, 2 * sizeof(double), cudaMemcpyDeviceToHost);
+    cudaMemcpy(h_C, d_C, 3 * sizeof(double), cudaMemcpyDeviceToHost);
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&ttime, start, stop);
     cout << "sum = " << h_C[0] << "\n";
-    cout << "A[37, 47] = " << h_C[1] << "\n";
+    cout << "A[37, 47] = " << h_C[2] << "\n";
     cout << "Time: " << ttime << " ms" << "\n";
     cudaFree(d_A);
     cudaFree(d_B);
