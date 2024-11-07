@@ -30,7 +30,7 @@ __global__ void MatrixVerify1(double *A, double *C)
     long long idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx == 0)
     {
-        C[2] = A[37 * n + 47];
+        C[1] = A[37 * n + 47];
     }
 }
 
@@ -66,10 +66,10 @@ int main(int argc, char *argv[])
     auto size = n * n * sizeof(double);
     cudaMalloc(&d_A, size);
     cudaMalloc(&d_B, size);
-    cudaMalloc(&d_C, 3 * sizeof(double));
+    cudaMalloc(&d_C, 2 * sizeof(double));
     cudaMalloc(&d_D, sizeof(long long));
     double h_A[n * n];
-    double h_C[3];
+    double h_C[2];
 
     for (double i = 0; i < n; i++)
     {
@@ -77,15 +77,6 @@ int main(int argc, char *argv[])
         {
             h_A[(long long)i * n + (long long)j] = (1 + cos(2 * i) + sin(j)) * (1 + cos(2 * i) + sin(j));
         }
-    }
-    // print h_A
-    for (int i = 0; i < 5; i++)
-    {
-        for (int j = 0; j < 5; j++)
-        {
-            cout << h_A[i * n + j] << " ";
-        }
-        cout << "\n";
     }
 
     cudaEvent_t start, stop;
@@ -95,6 +86,7 @@ int main(int argc, char *argv[])
     cudaEventRecord(start, 0);
     cudaEventSynchronize(start);
     cudaMemcpy(d_A, h_A, size, cudaMemcpyHostToDevice);
+
     for (int i = 0; i < t / 2; ++i)
     {
         MatrixUpdate<<<(n * n + 255) / 256, 256>>>(d_A, d_B);
@@ -107,15 +99,13 @@ int main(int argc, char *argv[])
     {
         MatrixUpdate<<<(n * n + 255) / 256, 256>>>(d_A, d_B);
         cudaDeviceSynchronize();
-        d_final = d_B;
     }
-    else
-    {
-        d_final = d_A;
-    }
+
+    d_final = d_A;
 
     MatrixVerify1<<<(n * n + 255) / 256, 256>>>(d_final, d_C);
     cudaDeviceSynchronize();
+
     long long st = 1;
     while (st <= n * n)
     {
@@ -126,12 +116,14 @@ int main(int argc, char *argv[])
     }
     MatrixVerify2<<<(n * n + 255) / 256, 256>>>(d_final, d_C);
     cudaDeviceSynchronize();
-    cudaMemcpy(h_C, d_C, 3 * sizeof(double), cudaMemcpyDeviceToHost);
+
+    cudaMemcpy(h_C, d_C, 2 * sizeof(double), cudaMemcpyDeviceToHost);
     cudaEventRecord(stop, 0);
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&ttime, start, stop);
+
     cout << "sum = " << h_C[0] << "\n";
-    cout << "A[37, 47] = " << h_C[2] << "\n";
+    cout << "A[37, 47] = " << h_C[1] << "\n";
     cout << "Time: " << ttime << " ms" << "\n";
     cudaFree(d_A);
     cudaFree(d_B);
