@@ -6,7 +6,7 @@
 
 using namespace std;
 static const long long n = 1000;
-int t;
+int t=10;
 
 __global__ void MatrixUpdate(double *A, double *B)
 {
@@ -15,13 +15,12 @@ __global__ void MatrixUpdate(double *A, double *B)
     {
         long long i = idx / n;
         long long j = idx % n;
-        if (i == 0 || i == n - 1 || j == 0 || j == n - 1)
-            B[idx] = A[idx];
-        else
+        B[idx] = A[idx];
+        if (!(i == 0 || i == n - 1 || j == 0 || j == n - 1))
         {
             auto t1 = max(min(A[idx - 1 + n], A[idx + 1 + n]), min(A[idx - 1 - n], A[idx + 1 - n]));
             auto t2 = min(max(A[idx - 1 + n], A[idx + 1 + n]), max(A[idx - 1 - n], A[idx + 1 - n]));
-            B[idx] = min(t1, t2) + A[idx];
+            B[idx] += min(t1, t2);
         }
     }
 }
@@ -31,7 +30,7 @@ __global__ void MatrixVerify1(double *A, double *C)
     long long idx = blockIdx.x * blockDim.x + threadIdx.x;
     if (idx == 0)
     {
-        C[2] = A[37 * n + 48];
+        C[2] = A[37 * n + 47];
     }
 }
 
