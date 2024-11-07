@@ -1,4 +1,4 @@
 g++ -std=c++11 -O3 -fopenmp -o s main.cpp
-./s.exe 500
-./s.exe 1000
-./s.exe 2000
+./s 500
+./s 1000
+./s 2000
