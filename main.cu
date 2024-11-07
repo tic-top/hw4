@@ -19,9 +19,9 @@ __global__ void MatrixUpdate(double *A, double *B)
             B[idx] = A[idx];
         else
         {
-            auto t1 = max(min(A[idx - 1], A[idx + 1]), min(A[idx - n], A[idx + n]));
-            auto t2 = min(max(A[idx - 1], A[idx + 1]), max(A[idx - n], A[idx + n]));
-            B[idx] = max(min(t1, t2), min(A[idx], max(t1, t2)));
+            auto t1 = max(min(A[idx - 1 + n], A[idx + 1 + n]), min(A[idx - 1 - n], A[idx + 1 - n]));
+            auto t2 = min(max(A[idx - 1 + n], A[idx + 1 + n]), max(A[idx - 1 - n], A[idx + 1 - n]));
+            B[idx] = min(t1, t2) + A[idx];
         }
     }
 }
@@ -71,11 +71,13 @@ int main(int argc, char *argv[])
     cudaMalloc(&d_D, sizeof(long long));
     double h_A[n * n];
     double h_C[3];
-    for (long long k = 0; k < n * n; k++)
+
+    for (double i = 0; i < n; i++)
     {
-        double i = (double)(k / n);
-        double j = (double)(k % n);
-        h_A[k] = sin(i * i + j) * sin(i * i + j) + cos(i - j);
+        for (double j = 0; j < n; j++)
+        {
+            h_A[(long long)i * n + (long long)j] = (1 + cos(2 * i) + sin(j)) * (1 + cos(2 * i) + sin(j));
+        }
     }
 
     cudaEvent_t start, stop;

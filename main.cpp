@@ -38,26 +38,30 @@ int main(int argc, char *argv[]) {
             for (int j = 0; j < n; ++j) {
                 if (i==0||i==n-1||j==0||j==n-1) B[i][j]=A[i][j];
                 else {
-                    // B[i][j] is the second smallest among
-                    // A[i-1][j-1], A[i+1][j+1], A[i+1][j-1], A[i-1][j+1]
-                    tmp0 = A[i-1][j-1] < A[i+1][j+1] ? A[i-1][j-1] : A[i+1][j+1];
-                    tmp1 = A[i-1][j-1] + A[i+1][j+1] - tmp0;
+                    // method1
+                    // tmp0 = A[i-1][j-1] < A[i+1][j+1] ? A[i-1][j-1] : A[i+1][j+1];
+                    // tmp1 = A[i-1][j-1] + A[i+1][j+1] - tmp0;
 
-                    if (A[i+1][j-1] <= tmp0) {
-                        tmp1 = tmp0;
-                        tmp0 = A[i+1][j-1];
-                    } else if (A[i+1][j-1] <= tmp1) {
-                        tmp1 = A[i+1][j-1];
-                    }
+                    // if (A[i+1][j-1] <= tmp0) {
+                    //     tmp1 = tmp0;
+                    //     tmp0 = A[i+1][j-1];
+                    // } else if (A[i+1][j-1] <= tmp1) {
+                    //     tmp1 = A[i+1][j-1];
+                    // }
 
-                    if (A[i-1][j+1] <= tmp0) {
-                        tmp1 = tmp0;
-                        tmp0 = A[i-1][j+1];
-                    } else if (A[i-1][j+1] <= tmp1) {
-                        tmp1 = A[i-1][j+1];
-                    }
+                    // if (A[i-1][j+1] <= tmp0) {
+                    //     tmp1 = tmp0;
+                    //     tmp0 = A[i-1][j+1];
+                    // } else if (A[i-1][j+1] <= tmp1) {
+                    //     tmp1 = A[i-1][j+1];
+                    // }
 
-                    B[i][j] = tmp1;
+                    // method2
+                    tmp0 = min(max(A[i-1][j-1], A[i+1][j+1]), max(A[i+1][j-1], A[i-1][j+1]));
+                    tmp1 = max(min(A[i-1][j-1], A[i+1][j+1]), min(A[i+1][j-1], A[i-1][j+1]));
+                    tmp1 = min(tmp1, tmp0);
+
+                    B[i][j] = tmp1+A[i][j];
                 }
             }
         }
